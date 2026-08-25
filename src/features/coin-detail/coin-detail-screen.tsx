@@ -39,7 +39,15 @@ export function CoinDetailScreen() {
   return (
     <Screen>
       <View style={styles.topBar}>
-        <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.navButton, pressed && styles.pressed]}>
+        <Pressable
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/');
+            }
+          }}
+          style={({ pressed }) => [styles.navButton, pressed && styles.pressed]}>
           <ThemedText type="smallBold">Back</ThemedText>
         </Pressable>
         {coinId ? (
