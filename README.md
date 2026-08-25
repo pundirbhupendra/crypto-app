@@ -3,15 +3,15 @@
 A modern cross-platform cryptocurrency market browser built with React Native,
 Expo, TypeScript, Expo Router, and the CoinPaprika REST API.
 
-This project is a production-style learning app. The current codebase started
-from the default Expo template, and the starter UI will be replaced with a
-feature-based crypto app architecture.
+This project is a production-oriented learning app. It demonstrates a
+feature-based architecture with Clean Architecture principles and an
+MVVM-like presentation layer without adding unnecessary abstractions.
 
 ## Status
 
-In progress. The app foundation is set up with Expo SDK 57, React Native,
-TypeScript, Expo Router, and strict TypeScript configuration. The next step is
-to replace the demo screens with real crypto market features.
+Implemented. The app provides markets, search, watchlist, and coin detail
+workflows with loading, error, empty, refresh, persistence, and cross-platform
+navigation states.
 
 ## Tech Stack
 
@@ -20,15 +20,17 @@ to replace the demo screens with real crypto market features.
 - React 19
 - TypeScript
 - Expo Router
-- Axios
+- Native `fetch`
 - TanStack Query
-- Zustand
+- Redux Toolkit and React Redux
 - Zod
+- AsyncStorage
+- FlashList
 - CoinPaprika REST API
 
-## Features Planned
+## Features
 
-- Market list with ranked coins and live market data
+- Market list with the top ranked coins and market data
 - Search for coins
 - Watchlist for favorite coins
 - Coin detail screen
@@ -65,7 +67,14 @@ Run linting:
 npm run lint
 ```
 
-## Planned Architecture
+Run typechecking and tests:
+
+```bash
+npm run typecheck
+npm test -- --runInBand
+```
+
+## Architecture
 
 ```txt
 crypto-app/
@@ -89,15 +98,17 @@ crypto-app/
 |   |
 |   +-- services/
 |   |   +-- coinpaprika/
-|   |       +-- client.ts            # Axios instance
+|   |       +-- client.ts            # fetch, timeout, and errors
 |   |       +-- coins.ts             # Coin endpoints
 |   |       +-- tickers.ts           # Ticker endpoints
-|   |       +-- types.ts             # API TypeScript types
+|   |       +-- types.ts             # Types inferred from schemas
 |   |       +-- schemas.ts           # Zod response schemas
 |   |
 |   +-- state/
-|   |   +-- watchlist-store.ts       # Zustand watchlist store
-|   |   +-- preferences-store.ts     # Zustand preferences store
+|   |   +-- store.tsx                # Redux store and persistence
+|   |   +-- hooks.ts                 # Typed Redux hooks
+|   |   +-- watchlist/               # Watchlist slice
+|   |   +-- preferences/             # Preferences slice
 |   |
 |   +-- lib/
 |   |   +-- query/
@@ -110,9 +121,28 @@ crypto-app/
 |   +-- utils/                       # Formatting helpers
 |
 +-- assets/
++-- tests/                            # Jest service and reducer tests
++-- docs/                             # Architecture and interview notes
++-- eas.json                          # EAS Build profiles
 +-- README.md
 +-- package.json
 ```
+
+### State Boundaries
+
+```text
+Server state: CoinPaprika -> service -> TanStack Query -> feature hook -> screen
+Client state: component -> typed dispatch -> Redux slice -> selector -> component
+```
+
+- TanStack Query owns CoinPaprika data, caching, request status, and refetching.
+- Redux Toolkit owns watchlist IDs and user preferences.
+- AsyncStorage persists only those non-sensitive local values.
+- API communication and Zod parsing stay inside `src/services/coinpaprika`.
+- Route files under `src/app` only compose feature screens.
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design rationale and
+trade-offs.
 
 ## API
 
@@ -124,7 +154,7 @@ Base URL:
 https://api.coinpaprika.com/v1
 ```
 
-Planned endpoints:
+Endpoints used by the service layer:
 
 - `GET /coins`
 - `GET /tickers`
@@ -139,7 +169,7 @@ This app is designed to practice modern React Native architecture:
 
 - Feature-based project structure
 - Server-state caching with TanStack Query
-- Local persistent state with Zustand
+- Local persistent state with Redux Toolkit and AsyncStorage
 - API response validation with Zod
 - Reusable UI components
 - Cross-platform routing with Expo Router
@@ -150,8 +180,18 @@ This app is designed to practice modern React Native architecture:
 - Keep `src/app` focused on routing.
 - Put screen business logic inside `src/features`.
 - Put API access and validation inside `src/services/coinpaprika`.
-- Use TanStack Query for remote data and Zustand for local app state.
+- Use TanStack Query for remote data and Redux Toolkit for local app state.
 - Keep reusable components small and move them into `src/components/ui`.
+
+## Testing And Delivery
+
+Jest tests cover Redux reducer behavior and the CoinPaprika fetch/validation
+boundary. The project also includes `eas.json` profiles for development,
+preview, and production builds. GitHub Actions runs installation, typechecking,
+tests, and linting on pushes and pull requests.
+
+The app targets Android, iOS, and Web through Expo SDK 57. Platform-specific
+behavior is isolated in platform files such as `app-tabs.web.tsx` where needed.
 
 Useful reference:
 
