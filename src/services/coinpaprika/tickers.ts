@@ -1,18 +1,14 @@
-import { coinpaprikaClient } from './client';
+import { requestJson } from './client';
 import { tickerSchema, tickersSchema } from './schemas';
 
 export async function getTickers() {
-  const response = await coinpaprikaClient.get('/tickers', {
-    params: { quotes: 'USD' },
-  });
+  const response = await requestJson('/tickers?quotes=USD');
 
-  return tickersSchema.parse(response.data);
+  return tickersSchema.parse(response);
 }
 
 export async function getTickerById(coinId: string) {
-  const response = await coinpaprikaClient.get(`/tickers/${coinId}`, {
-    params: { quotes: 'USD' },
-  });
+  const response = await requestJson(`/tickers/${encodeURIComponent(coinId)}?quotes=USD`);
 
-  return tickerSchema.parse(response.data);
+  return tickerSchema.parse(response);
 }

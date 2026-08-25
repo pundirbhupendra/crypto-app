@@ -5,12 +5,13 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { MarketTicker } from '@/services/coinpaprika/types';
-import { useWatchlistStore } from '@/state/watchlist-store';
+import { useAppDispatch, useAppSelector } from '@/state/hooks';
+import { toggleWatchlist } from '@/state/watchlist/watchlist-slice';
 import { formatCompactNumber, formatCurrency, formatPercent } from '@/utils/format';
 
 export function CoinRow({ ticker }: { ticker: MarketTicker }) {
-  const isWatchlisted = useWatchlistStore((state) => state.isWatchlisted(ticker.id));
-  const toggleWatchlist = useWatchlistStore((state) => state.toggleWatchlist);
+  const dispatch = useAppDispatch();
+  const isWatchlisted = useAppSelector((state) => state.watchlist.watchlistIds.includes(ticker.id));
   const quote = ticker.quotes.USD;
   const change = quote.percent_change_24h ?? 0;
   const isPositive = change >= 0;
@@ -48,7 +49,7 @@ export function CoinRow({ ticker }: { ticker: MarketTicker }) {
           accessibilityLabel={isWatchlisted ? 'Remove from watchlist' : 'Add to watchlist'}
           onPress={(event) => {
             event.stopPropagation();
-            toggleWatchlist(ticker.id);
+            dispatch(toggleWatchlist(ticker.id));
           }}
           style={({ pressed }) => [styles.watchButton, pressed && styles.pressed]}>
           <ThemedText type="smallBold">{isWatchlisted ? 'Saved' : 'Save'}</ThemedText>

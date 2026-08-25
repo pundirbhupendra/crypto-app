@@ -6,11 +6,11 @@ import { StateView } from '@/components/ui/state-view';
 import { CoinList } from '@/features/markets/components/coin-list';
 import { useTickers } from '@/features/markets/hooks/use-tickers';
 import { getApiErrorMessage } from '@/services/coinpaprika/client';
-import { useWatchlistStore } from '@/state/watchlist-store';
+import { useAppSelector } from '@/state/hooks';
 
 export function WatchlistScreen() {
   const tickersQuery = useTickers();
-  const watchlistIds = useWatchlistStore((state) => state.watchlistIds);
+  const watchlistIds = useAppSelector((state) => state.watchlist.watchlistIds);
 
   const watchlistTickers = useMemo(() => {
     const watchlistSet = new Set(watchlistIds);

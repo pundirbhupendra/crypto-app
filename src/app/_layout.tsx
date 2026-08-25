@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { AppQueryProvider } from '@/lib/query/query-provider';
+import { AppStateProvider } from '@/state/store';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -16,14 +17,16 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <AppQueryProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="coin/[id]" />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </AppQueryProvider>
+    <AppStateProvider>
+      <AppQueryProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="coin/[id]" />
+          </Stack>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </AppQueryProvider>
+    </AppStateProvider>
   );
 }

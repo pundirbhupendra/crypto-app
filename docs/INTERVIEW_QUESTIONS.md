@@ -114,17 +114,17 @@ When the code changes, update the project examples and the capability notes in t
 
 **Detailed explanation:** A REST API exposes resources through HTTP methods and resource-oriented URLs. A service boundary centralizes the base URL, timeout, query parameters, response validation, and error translation. This makes UI code easier to test and lets the API client change without rewriting screens.
 
-**Project example:** `services/coinpaprika/client.ts` configures an Axios client; `tickers.ts` exposes `getTickers` and `getTickerById`; `coins.ts` exposes `getCoinById`.
+**Project example:** `services/coinpaprika/client.ts` configures the native fetch boundary; `tickers.ts` exposes `getTickers` and `getTickerById`; `coins.ts` exposes `getCoinById`.
 
 **Follow-up:** Where would you put authentication headers if CoinPaprika required them?
 
-### 2.2 This app uses Axios. How would the same service differ with `fetch`?
+### 2.2 Why does this app use native `fetch` instead of Axios?
 
 **Short answer:** `fetch` is built in but does not reject on HTTP error status, so the service must check `response.ok`, parse the body, and handle timeouts or aborts explicitly.
 
 **Detailed explanation:** Axios provides an instance, base URL, timeout behavior, and structured error information. With `fetch`, a repository function might create an `AbortController`, call `fetch`, reject non-2xx responses, parse JSON, and pass the result to Zod. Either client can fit this app; consistency and testability matter more than the brand of HTTP client.
 
-**Project example:** The current `client.ts` uses Axios with a 15-second timeout. A proposed `fetch` replacement should preserve the same service function signatures and error messages.
+**Project example:** The current `client.ts` uses native `fetch`, `AbortController`, and a 15-second timeout. The service functions preserve stable signatures while keeping transport details out of screens.
 
 **Follow-up:** Why is checking `response.ok` essential with `fetch`?
 
@@ -154,19 +154,19 @@ When the code changes, update the project examples and the capability notes in t
 
 **Detailed explanation:** Server state has request status, cache lifetime, synchronization, and possible conflicts with the source of truth. Client state represents local intent or UI state. Separating them prevents a global store from becoming a second, inconsistent API cache.
 
-**Project example:** `useWatchlistStore` and `usePreferencesStore` use Zustand. `useQuery` owns ticker and coin data, while `SearchScreen` owns its input value with `useState`.
+**Project example:** `watchlistSlice` and `preferencesSlice` use Redux Toolkit. `useQuery` owns ticker and coin data, while `SearchScreen` owns its input value with `useState`.
 
 **Follow-up:** Where would a selected coin ID belong: query cache, Zustand, or route state?
 
-### 2.6 Why does Zustand fit the watchlist, and how would Redux Toolkit compare?
+### 2.6 Why does Redux Toolkit fit the watchlist, and how would Zustand compare?
 
-**Short answer:** Zustand gives this small app a concise store with selectors and persistence; Redux Toolkit provides stronger conventions, middleware, action history, and a more structured ecosystem.
+**Short answer:** Redux Toolkit gives this learning project explicit slices, typed actions, and predictable reducers; Zustand would provide less ceremony for a small local store.
 
-**Detailed explanation:** Zustand has low ceremony and lets components subscribe to selected state, which is appropriate for a few local preferences and IDs. Redux Toolkit is valuable for larger teams or domains needing slices, serializable actions, predictable reducers, DevTools, and established middleware patterns. Neither should replace TanStack Query for server caching.
+**Detailed explanation:** Redux Toolkit is valuable when a team benefits from slices, serializable actions, predictable reducers, DevTools, and established middleware patterns. Zustand is appropriate when a smaller surface and minimal ceremony matter more. Neither should replace TanStack Query for server caching.
 
 **Project example:** `useWatchlistStore` exposes `isWatchlisted` and `toggleWatchlist`; `usePreferencesStore` stores the USD preference. A Redux Toolkit version would likely use separate slices and a persisted store configuration.
 
-**Follow-up:** What state would make you reconsider Zustand for Redux Toolkit?
+**Follow-up:** What state or team constraints would make you reconsider Redux Toolkit for Zustand?
 
 ### 2.7 How does Zod complement TypeScript?
 
@@ -182,9 +182,9 @@ When the code changes, update the project examples and the capability notes in t
 
 **Short answer:** AsyncStorage persists small non-sensitive JSON values across launches; it is not an encrypted database or a replacement for server storage.
 
-**Detailed explanation:** Zustand’s `persist` middleware serializes state and uses `createJSONStorage(() => AsyncStorage)` to save it asynchronously. Reads and writes can be delayed or fail, so hydration and failure behavior matter. Secrets, tokens, and financial credentials should use a secure credential store instead.
+**Detailed explanation:** The Redux provider serializes selected slices and uses AsyncStorage to save them asynchronously. Reads and writes can be delayed or fail, so hydration and failure behavior matter. Secrets, tokens, and financial credentials should use a secure credential store instead.
 
-**Project example:** `preferences-store.ts` persists `crypto-app-preferences`, and `watchlist-store.ts` persists `crypto-app-watchlist` through AsyncStorage.
+**Project example:** `state/store.tsx` persists `crypto-app-preferences` and `crypto-app-watchlist` through AsyncStorage after Redux hydration.
 
 **Follow-up:** How would you migrate persisted state after changing its shape?
 
@@ -222,7 +222,7 @@ When the code changes, update the project examples and the capability notes in t
 
 **Short answer:** FlashList is designed for efficient large-list recycling, but row complexity, image work, subscriptions, and unnecessary renders still determine real performance.
 
-**Detailed explanation:** `FlatList` is a solid built-in virtualized list, while FlashList can improve measurement and recycling for large or complex collections. Performance should be measured on representative Android and iOS devices. Stable keys, lightweight rows, selective Zustand subscriptions, memoization only where justified, and server pagination all matter.
+**Detailed explanation:** `FlatList` is a solid built-in virtualized list, while FlashList can improve measurement and recycling for large or complex collections. Performance should be measured on representative Android and iOS devices. Stable keys, lightweight rows, selective Redux selectors, memoization only where justified, and server pagination all matter.
 
 **Project example:** `CoinList` renders ticker rows with FlashList, separators, refresh control, and an empty component. `CoinRow` selects only the watchlist operations it needs.
 
@@ -236,7 +236,7 @@ When the code changes, update the project examples and the capability notes in t
 
 **Detailed explanation:** Useful principles here are dependency direction, single responsibility, stable domain-facing contracts, and isolating external frameworks at boundaries. Screens should depend on use-case or service contracts, not URL details. Introducing many interfaces or layers without a change in testability would add ceremony rather than value.
 
-**Project example:** Feature screens depend on `useTickers` and CoinPaprika service functions; Zod schemas and Axios are contained under `services/coinpaprika`; query setup is under `lib/query`.
+**Project example:** Feature screens depend on `useTickers` and CoinPaprika service functions; Zod schemas and native fetch are contained under `services/coinpaprika`; query setup is under `lib/query`.
 
 **Follow-up:** What dependency direction would you enforce before supporting a second market-data provider?
 
@@ -258,7 +258,7 @@ When the code changes, update the project examples and the capability notes in t
 
 **Project example:** Today `useTickers` imports `getTickers` directly. A future `TickerRepository` could expose `list()` and `getById()`, with `coinpaprikaTickerRepository` as the production implementation and an in-memory fake in tests.
 
-**Follow-up:** How would you prevent the repository from leaking Axios or Zod types into the feature layer?
+**Follow-up:** How would you prevent the repository from leaking fetch or Zod types into the feature layer?
 
 ### 3.4 How would you design error handling across transport, validation, and UI?
 
@@ -296,7 +296,7 @@ When the code changes, update the project examples and the capability notes in t
 
 **Detailed explanation:** Unit tests should cover currency/percentage formatting, Zod rejection, query key construction, watchlist toggling, and filtering. Integration tests should verify loading, retry, empty, refresh, and navigation behavior. End-to-end tests should cover a user opening a coin, saving it, restarting, and viewing the watchlist. The repository currently has no test framework or test files, so setup is part of the work.
 
-**Project example:** Candidate tests include `format.ts`, `watchlist-store.ts`, `useTickers`, and `CoinList` with a mocked `getTickers` response. CoinPaprika should not be called directly in deterministic tests.
+**Project example:** Tests cover `watchlist-slice.ts` and the CoinPaprika fetch boundary with a mocked `getTickers` response. Future tests should cover `format.ts`, `useTickers`, and `CoinList`; CoinPaprika should not be called directly in deterministic tests.
 
 **Follow-up:** Which behavior would you test before visual snapshot tests?
 

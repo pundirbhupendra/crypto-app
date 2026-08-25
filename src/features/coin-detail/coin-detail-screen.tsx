@@ -11,14 +11,15 @@ import { queryKeys } from '@/lib/query/query-keys';
 import { getApiErrorMessage } from '@/services/coinpaprika/client';
 import { getCoinById } from '@/services/coinpaprika/coins';
 import { getTickerById } from '@/services/coinpaprika/tickers';
-import { useWatchlistStore } from '@/state/watchlist-store';
+import { useAppDispatch, useAppSelector } from '@/state/hooks';
+import { toggleWatchlist } from '@/state/watchlist/watchlist-slice';
 import { formatCompactNumber, formatCurrency, formatPercent } from '@/utils/format';
 
 export function CoinDetailScreen() {
   const params = useLocalSearchParams<{ id?: string }>();
   const coinId = Array.isArray(params.id) ? params.id[0] : params.id;
-  const isWatchlisted = useWatchlistStore((state) => (coinId ? state.isWatchlisted(coinId) : false));
-  const toggleWatchlist = useWatchlistStore((state) => state.toggleWatchlist);
+  const dispatch = useAppDispatch();
+  const isWatchlisted = useAppSelector((state) => (coinId ? state.watchlist.watchlistIds.includes(coinId) : false));
 
   const tickerQuery = useQuery({
     queryKey: queryKeys.ticker(coinId ?? ''),
@@ -52,7 +53,7 @@ export function CoinDetailScreen() {
         </Pressable>
         {coinId ? (
           <Pressable
-            onPress={() => toggleWatchlist(coinId)}
+            onPress={() => dispatch(toggleWatchlist(coinId))}
             style={({ pressed }) => [styles.navButton, pressed && styles.pressed]}>
             <ThemedText type="smallBold">{isWatchlisted ? 'Saved' : 'Save'}</ThemedText>
           </Pressable>
